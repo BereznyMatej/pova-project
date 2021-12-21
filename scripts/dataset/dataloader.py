@@ -22,33 +22,33 @@ class Images(Dataset):
             4: 0,  # static
             5: 0,  # dynamic
             6: 0,  # ground
-            7: 4,  # road
-            8: 0,  # sidewalk
+            7: 1,  # road
+            8: 2,  # sidewalk
             9: 0,  # parking
             10: 0,  # rail track
-            11: 0,  # building
-            12: 0,  # wall
-            13: 0,  # fence
+            11: 3,  # building
+            12: 4,  # wall
+            13: 5,  # fence
             14: 0,  # guard rail
             15: 0,  # bridge
             16: 0,  # tunnel
-            17: 0,  # pole
+            17: 6,  # pole
             18: 0,  # polegroup
-            19: 0,  # traffic light
-            20: 0,  # traffic sign
-            21: 0,  # vegetation
-            22: 0,  # terrain
-            23: 0,  # sky
-            24: 1,  # person
-            25: 0,  # rider
-            26: 2,  # car
-            27: 3,  # truck
-            28: 0,  # bus
+            19: 7,  # traffic light
+            20: 8,  # traffic sign
+            21: 9,  # vegetation
+            22: 10,  # terrain
+            23: 11,  # sky
+            24: 12,  # person
+            25: 13,  # rider
+            26: 14,  # car
+            27: 15,  # truck
+            28: 16,  # bus
             29: 0,  # caravan
             30: 0,  # trailer
-            31: 0,  # train
-            32: 0,  # motorcycle
-            33: 0,  # bicycle
+            31: 17,  # train
+            32: 18,  # motorcycle
+            33: 19,  # bicycle
             -1: 0  # licenseplate
         }
         self.data, self.labels = self.load(data_path)

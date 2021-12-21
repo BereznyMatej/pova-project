@@ -3,11 +3,12 @@ import os
 import copy
 import json
 import numpy as np
+import torchvision.transforms.functional as TF
+
 
 from PIL import Image
 from torch.utils.data import Dataset
-import torchvision.transforms.functional as TF
-
+from dataset.augmentations import get_augmentations
 
 class Images(Dataset):
 
@@ -61,9 +62,11 @@ class Images(Dataset):
 
 
     def __process_image__(self, image_path, img_type, interpolation, label=False):
+        
+        pad = 10 if self.transform is not None else 0
 
         image = Image.open(image_path).convert(img_type)
-        image = TF.resize(image, size=(128, 256), interpolation=interpolation)
+        image = TF.resize(image, size=(128+pad, 256+pad), interpolation=interpolation)
         if label:
             image = torch.from_numpy(np.asarray(image, dtype=np.uint8))
             return self.__mask_to_map__(image)
@@ -71,7 +74,7 @@ class Images(Dataset):
         return TF.pil_to_tensor(image)
 
 
-    def load(self, data_path, label=False):
+    def load(self, data_path):
         
         data = []
         labels = []
@@ -106,10 +109,14 @@ class Images(Dataset):
 
         return  torch.stack(data), torch.stack(labels)
 
-    def __getitem__(self, index):        
+    def __getitem__(self, index):
+
         data = copy.deepcopy(self.data[index])
         label = copy.deepcopy(self.labels[index])
-        
+
+        if self.transform is not None:
+            data, label = self.transform((data, label))
+
         return {'x': data.float(), 'y': label.long()}
 
     def __len__(self):
@@ -118,7 +125,9 @@ class Images(Dataset):
 
 def get_dataset(path):
 
-    train = Images(data_path=os.path.join(path, 'train'))
+    augmenations = get_augmentations((128,256), 0.5)
+
+    train = Images(data_path=os.path.join(path, 'train'), transform=augmenations)
     valid = Images(data_path=os.path.join(path, 'val'))
     
     return train, valid

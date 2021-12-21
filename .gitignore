@@ -133,4 +133,4 @@ dmypy.json
 data/train/*
 data/valid/*
 pretrained_weights/*
-
+test.ipynb

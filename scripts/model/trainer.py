@@ -4,7 +4,7 @@ import torch
 import sys
 import numpy as numpy
 
-from model.unet import UNet
+from model.unet import UNet, UNetV2
 
 class UNetTrainer:
 
@@ -19,7 +19,7 @@ class UNetTrainer:
         self.metric = metric
         self.logger = logger        
 
-        self.model = UNet(in_channels, out_classes)
+        self.model = UNetV2(in_channels, out_classes)
         self.device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         sys.stdout.flush()
 

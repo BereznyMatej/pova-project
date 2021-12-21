@@ -36,11 +36,12 @@ class DownTransition(nn.Module):
         self.ops = DoubleConv(in_channels, out_channels, act)
         self.depth = depth
         self.maxpool = nn.MaxPool2d(2)
+        self.dropout = nn.Dropout2d(p=0.5)
 
     def forward(self, x):
         out = self.ops(x)
         out_after_pool = out if self.depth == 3 else self.maxpool(out)
-        return out_after_pool, out
+        return out_after_pool, self.dropout(out)
 
 
 class UpTransition(nn.Module):

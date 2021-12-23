@@ -27,10 +27,10 @@ def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, 
 def ce_and_dc_loss(input_tensor: Tensor, target: Tensor):
     
     ce = nn.CrossEntropyLoss()
-    input_tensor = F.softmax(input_tensor, dim=1).float()
-    target = F.one_hot(target, 20).permute(0, 3, 1, 2).float()
 
-    result =  ce(input_tensor, target) + dice_loss(input_tensor, target, multiclass=True)
+    result =  ce(input_tensor, target) + dice_loss(F.softmax(input_tensor, dim=1).float(),
+                                                   F.one_hot(target,8).permute(0, 3, 1, 2).float(),
+                                                   multiclass=True)
     
     return result
 
@@ -39,7 +39,7 @@ def multiclass_dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: boo
     
     if only_coeff:
         input = F.softmax(input, dim=1).float()
-        target = F.one_hot(target, 20).permute(0, 3, 1, 2).float()
+        target = F.one_hot(target, 8).permute(0, 3, 1, 2).float()
 
     assert input.size() == target.size()
     dice = 0

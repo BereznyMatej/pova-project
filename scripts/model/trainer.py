@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch
 import sys
 import numpy as numpy
+import torch.nn.functional as F
+
 
 from model.unet import UNet, UNetV2
 
@@ -11,7 +13,7 @@ class UNetTrainer:
     def __init__(self, start_epoch=0, end_epoch=1000,
                  criterion=None, metric=None, logger=None,
                  model_name="", load=False, step_size=int(50* 0.8),
-                 momentum=0, in_channels=1, out_classes=1, learning_rate=0.01):
+                 momentum=0, in_channels=1, out_classes=1, learning_rate=0.001):
         
         self.start_epoch = start_epoch
         self.end_epoch = end_epoch
@@ -19,7 +21,7 @@ class UNetTrainer:
         self.metric = metric
         self.logger = logger        
 
-        self.model = UNetV2(in_channels, out_classes)
+        self.model = UNetV2(in_channels, out_classes, act='relu')
         self.device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         sys.stdout.flush()
 
@@ -29,7 +31,7 @@ class UNetTrainer:
             unParalled_state_dict = {}
             for key in state_dict.keys():
                 unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
-            self.model.load_state_dict(unParalled_state_dict)
+            self.model.load_state_dict(unParalled_state_dict, strict=False)
         
         self.model = nn.DataParallel(self.model, device_ids = [i for i in range(torch.cuda.device_count())])
         self.model.to(self.device)
@@ -83,3 +85,24 @@ class UNetTrainer:
                 if (index + 1) % 5 == 0:
                     self.logger.iteration(epoch, index, False)
                     sys.stdout.flush()
+
+
+    def infer(self, data):
+        """Performs inference on given data, calculates dice coeff. if annotations 
+        are provided.
+        Args:
+            data (tensor): data to be infered. Shape: (BxCxHxWxD)
+            metric (DiceCoefficient): 
+        Returns:
+            np.array: network predictions
+            list: list with dice results.
+        """
+        results = []
+        with torch.no_grad():
+            self.model.eval()
+            for index, patch in enumerate(data):
+                x, y = patch['x'].to(self.device), patch['y'].to(self.device)
+                pred=self.model(x)
+                results.append(F.softmax(pred, dim=1).cpu().numpy())
+                #loss = self.criterion(pred, y)
+        return results

@@ -12,7 +12,7 @@ class ConvBlock(nn.Module):
         if act == 'relu':
             self.activation = nn.ReLU(out_channels)
         elif act == 'lrelu':
-            self.activation = nn.LeakyRelu(inplace=True)
+            self.activation = nn.LeakyReLU(inplace=True)
 
     def forward(self, x):
         return self.activation(self.b_norm(self.conv(x)))

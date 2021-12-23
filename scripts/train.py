@@ -19,8 +19,8 @@ net_name = args.model
 
 train, valid = get_dataset("/home/mberezny/Downloads/leftImg8bit_trainvaltest/leftImg8bit")
 
-train_loader = DataLoader(train, batch_size=24, num_workers=1, shuffle=True)
-valid_loader = DataLoader(valid, batch_size=24, num_workers=1)
+train_loader = DataLoader(train, batch_size=4, num_workers=2, shuffle=True)
+valid_loader = DataLoader(valid, batch_size=4, num_workers=2)
 
 val_iter = len(valid)
 train_iter = len(train)
@@ -60,7 +60,7 @@ trainer = UNetTrainer(start_epoch=json_dict['epoch'],
                       momentum=0.95,
                       load=args.load_weights,
                       learning_rate=0.0002,
-                      in_channels=3, 
-                      out_classes=20)
+                      in_channels=3,
+                      out_classes=8)
 
 trainer.fit(train_loader, valid_loader)

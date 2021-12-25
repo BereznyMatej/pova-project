@@ -77,11 +77,11 @@ class Images(Dataset):
         else: 
             image = TF.pil_to_tensor(image)
             
-            chan = []
-            for c in range(image.shape[0]):
-                chan.append((image[c] - self.mean[c]) / self.std[c])
-            image = torch.stack(chan)
-            
+            #chan = []
+            #for c in range(image.shape[0]):
+            #    chan.append((image[c] - self.mean[c]) / self.std[c])
+            #image = torch.stack(chan)
+
             return image
 
 

@@ -90,26 +90,65 @@ class ElasticTransform:
         return (img, label)
 
 
-class Constrast:
+class GammaCorrection:
 
-    def __init__(self, random_state, alpha=(0.75, 1.25), p=0.5) -> None:
+    def __init__(self, random_state, gamma=0.3, p=0.5) -> None:
+        self.gamma = gamma
+        self.p = p
         self.random_state = random_state
-        self.alpha = alpha
+
+    def __call__(self, data):
+        x, y = data
+        
+        if self.random_state.uniform() < self.p:
+            x = TF.adjust_gamma(x, gamma=self.gamma)
+        
+        return (x, y)
+
+
+class Contrast:
+    
+    def __init__(self, random_state, p=0.5):
+        self.random_state = random_state
+        self.p = p
+
+    def __call__(self, data) -> None:
+        
+        x, y = data
+        if self.random_state.uniform() < self.p:
+            x = TF.adjust_contrast(x, contrast_factor=self.random_state.uniform())
+        
+        return (x, y)
+
+
+class Saturation:
+
+    def __init__(self, random_state, p=0.5):
+        self.random_state = random_state
+        self.p = p
+
+    
+    def __call__(self, data):
+
+        x, y = data
+        if self.random_state.uniform() < self.p:
+            x = TF.adjust_saturation(x, saturation_factor=self.random_state.uniform(0, 2))
+
+        return (x, y)
+
+
+class ColorTransform:
+
+    def __init__(self, random_state, p=0.5) -> None:
+        self.random_state = random_state
         self.p = p
     
-    def __call__(self, data) -> tuple:
+    def __call__(self, data):
+        
         x, y = data
-        mn = x.mean()
-        minm = x.min()
-        maxm = x.max()
-        if self.random_state.uniform() < self.exec_prob and self.alpha[0] < 1:
-            factor = np.random.uniform(self.alpha[0], 1)
-        else:
-            factor = np.random.uniform(max(self.alpha[0], 1), self.alpha[1])
-        x = (x - mn) * factor + mn
-        x[x < minm] = minm
-        x[x > maxm] = maxm
-
+        if self.random_state.uniform() < self.p:
+            hue_factor = self.random_state.uniform(low=-0.5, high=0.5)
+            x = TF.adjust_hue(x, hue_factor=hue_factor)
         return (x, y)
 
 
@@ -119,5 +158,8 @@ def get_augmentations(size, probability):
 
     return AUG.Compose([Crop(size),
                         Mirroring(random_state, probability),
-                        #Constrast(random_state=random_state, p=probability),
+                        ColorTransform(random_state, p=probability),
+                        Saturation(random_state, p=probability),
+                        Contrast(random_state=random_state, p=probability),
+                        GammaCorrection(random_state=random_state, p=probability),
                         ElasticTransform(random_state=random_state, p=probability)])

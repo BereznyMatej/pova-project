@@ -2,6 +2,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, epsilon=1e-6):
     # Average of Dice coefficient for all batches, or for a single mask
@@ -24,23 +25,25 @@ def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, 
             dice += dice_coeff(input[i, ...], target[i, ...])
         return dice / input.shape[0]
 
-def ce_and_dc_loss(input_tensor: Tensor, target: Tensor):
-    
-    ce = nn.CrossEntropyLoss()
 
-    result =  ce(input_tensor, target) + dice_loss(F.softmax(input_tensor, dim=1).float(),
-                                                   F.one_hot(target,8).permute(0, 3, 1, 2).float(),
-                                                   multiclass=True)
-    
-    return result
+class Combined_CE_DC_Loss:
 
-def multiclass_dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, epsilon=1e-6, only_coeff=False):
+    def __init__(self, weight=None):
+        self.ce = nn.CrossEntropyLoss(wieght=weight)
+
+    def __call__(self, input_tensor: Tensor, target: Tensor):    
+        
+        ce_loss = self.ce(input_tensor, target)
+        dc_loss = dice_loss(input_tensor, target, multiclass=True)
+ 
+        return ce_loss + dc_loss
+
+
+def multiclass_dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = True, epsilon=1e-6):
     # Average of Dice coefficient for all classes
-    
-    if only_coeff:
-        input = F.softmax(input, dim=1).float()
-        target = F.one_hot(target, 8).permute(0, 3, 1, 2).float()
 
+    input = F.softmax(input, dim=1).float()
+    target = F.one_hot(target, 8).permute(0, 3, 1, 2).float()
     assert input.size() == target.size()
     dice = 0
     for channel in range(input.shape[1]):
@@ -51,6 +54,7 @@ def multiclass_dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: boo
 
 def dice_loss(input: Tensor, target: Tensor, multiclass: bool = True):
     # Dice loss (objective to minimize) between 0 and 1
-    assert input.size() == target.size()
     fn = multiclass_dice_coeff if multiclass else dice_coeff
-    return 1 - fn(input, target, reduce_batch_first=True)
+    res = fn(input, target, reduce_batch_first=True)
+    return 1 - res
+

@@ -6,14 +6,15 @@ import numpy as numpy
 import torch.nn.functional as F
 
 
-from model.unet import UNet, UNetV2
+from model.unet import UNet
 
 class UNetTrainer:
 
     def __init__(self, start_epoch=0, end_epoch=1000,
-                 criterion=None, metric=None, logger=None,
-                 model_name="", load=False, step_size=int(50* 0.8),
-                 momentum=0, in_channels=1, out_classes=1, learning_rate=0.001):
+                 criterion=None, logger=None, model_name="",
+                 load=False, step_size=int(50* 0.8), metric=None,
+                 arch=UNet, in_channels=1, out_classes=1,
+                 learning_rate=0.001, dropout_chance=0.0):
         
         self.start_epoch = start_epoch
         self.end_epoch = end_epoch
@@ -21,7 +22,10 @@ class UNetTrainer:
         self.metric = metric
         self.logger = logger        
 
-        self.model = UNetV2(in_channels, out_classes, act='relu')
+        self.model = arch(in_channels, out_classes, act='relu',
+                          dropout_chance=dropout_chance)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), learning_rate)
+
         self.device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         sys.stdout.flush()
 
@@ -32,10 +36,9 @@ class UNetTrainer:
             for key in state_dict.keys():
                 unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
             self.model.load_state_dict(unParalled_state_dict, strict=False)
-        
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.model = nn.DataParallel(self.model, device_ids = [i for i in range(torch.cuda.device_count())])
         self.model.to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), learning_rate)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, 
                                                          step_size=step_size,
                                                          gamma=0.5)
@@ -60,13 +63,18 @@ class UNetTrainer:
         for index, patch in enumerate(train_loader):
             self.logger.time(iteration=True)
             x, y = patch['x'].to(self.device), patch['y'].to(self.device)
+            loss, metric = 0, 0
             pred=self.model(x)
-            loss = self.criterion(pred, y)
+            for item in pred:
+                loss += self.criterion(item, y)
+                metric += self.metric(item, y)
+            loss /= len(pred)
+            metric /= len(pred)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             self.logger.update_metrics(index=index, train_loss=round(loss.item(), 2),
-                              train_dice=self.metric(pred,y, only_coeff=True))
+                              train_dice=metric)
             if (index + 1) % 5 == 0:
                 self.logger.iteration(epoch, index, False)
                 sys.stdout.flush()
@@ -78,10 +86,15 @@ class UNetTrainer:
             self.model.eval()
             for index, patch in enumerate(valid_loader):
                 x, y = patch['x'].to(self.device), patch['y'].to(self.device)
+                loss, metric = 0, 0
                 pred=self.model(x)
-                loss = self.criterion(pred, y)
+                for item in pred:
+                    loss += self.criterion(item, y)
+                    metric += self.metric(item, y)
+                loss /= len(pred)
+                metric /= len(pred)
                 self.logger.update_metrics(index=index, valid_loss=loss.item(),
-                                      valid_dice=self.metric(pred,y, only_coeff=True))
+                                      valid_dice=metric)
                 if (index + 1) % 5 == 0:
                     self.logger.iteration(epoch, index, False)
                     sys.stdout.flush()
@@ -98,11 +111,14 @@ class UNetTrainer:
             list: list with dice results.
         """
         results = []
+        seg_evals = []
         with torch.no_grad():
             self.model.eval()
             for index, patch in enumerate(data):
                 x, y = patch['x'].to(self.device), patch['y'].to(self.device)
                 pred=self.model(x)
+                pred = pred[-1]
                 results.append(F.softmax(pred, dim=1).cpu().numpy())
                 #loss = self.criterion(pred, y)
-        return results
+                seg_evals.append(self.metric(pred, y).item())
+        return results, seg_evals

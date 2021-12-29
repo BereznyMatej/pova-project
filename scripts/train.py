@@ -12,18 +12,21 @@ from model.unet import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', '-m', type=str)
-parser.add_argument('--arch', '-a', default='unet', type=str)
+parser.add_argument('--arch', '-a', default='UNet', type=str)
 parser.add_argument('--dropout_chance', '-d', default=0.0, type=float)
 parser.add_argument('--load_weights', '-l', action='store_true')
+parser.add_argument('--path', '-p', type=str)
 
 args = parser.parse_args()
 
 net_name = args.model
 
-train, valid = get_dataset("/home/mberezny/Downloads/leftImg8bit_trainvaltest/leftImg8bit")
+#train, valid = get_dataset("/home/mberezny/Downloads/leftImg8bit_trainvaltest/leftImg8bit")
+#train, valid = get_dataset("/storage/brno2/home/kiiroq/leftImg8bit_trainvaltest/leftImg8bit")
+train, valid = get_dataset(args.path)
 
-train_loader = DataLoader(train, batch_size=8, num_workers=4, shuffle=True)
-valid_loader = DataLoader(valid, batch_size=8, num_workers=4)
+train_loader = DataLoader(train, batch_size=16, num_workers=4, shuffle=True)
+valid_loader = DataLoader(valid, batch_size=16, num_workers=4)
 
 val_iter = len(valid)
 train_iter = len(train)

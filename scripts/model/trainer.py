@@ -111,14 +111,14 @@ class UNetTrainer:
             list: list with dice results.
         """
         results = []
-        seg_evals = []
+        seg_results = []
+
         with torch.no_grad():
             self.model.eval()
             for index, patch in enumerate(data):
                 x, y = patch['x'].to(self.device), patch['y'].to(self.device)
                 pred=self.model(x)
                 pred = pred[-1]
+                self.metric.add(torch.argmax(F.softmax(pred, dim=1), dim=1).long().detach().cpu(), y.long().detach().cpu())
                 results.append(F.softmax(pred, dim=1).cpu().numpy())
-                #loss = self.criterion(pred, y)
-                seg_evals.append(self.metric(pred, y).item())
-        return results, seg_evals
+        return results

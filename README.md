@@ -2,7 +2,8 @@ Name: Matej Berezny, Ondrej Valo
 
 VUT FIT - Computer Vision (POVa) - Semantic image segmentation (project theme)
 
-Set of scripts used for training 2D neural networks for CityScapes categorical segmentation. All scripts used for data manipulation are stored in `\dataset`, while scripts handling the network training are in `\unet`. 
+Set of scripts used for training 2D neural networks for CityScapes categorical segmentation.
+All scripts used for data manipulation are stored in `\dataset`, while scripts handling the network training are in `\unet`. 
 
 
 

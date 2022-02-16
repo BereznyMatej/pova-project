@@ -59,6 +59,8 @@ def dice_loss(input: Tensor, target: Tensor, multiclass: bool = True):
     return 1 - res
 
 
+
+
 class ConfusionMatrix:
     """Constructs a confusion matrix for a multi-class classification problems.
     Does not support multi-label, multi-class problems.
@@ -66,7 +68,7 @@ class ConfusionMatrix:
     - num_classes (int): number of classes in the classification problem.
     - normalized (boolean, optional): Determines whether or not the confusion
     matrix is normalized or not. Default: False.
-    Modified from: https://github.com/pytorch/tnt/blob/master/torchnet/meter/confusionmeter.py
+    Taken from: https://github.com/davidtvs/PyTorch-ENet/blob/master/metric/iou.py
     """
 
     def __init__(self, num_classes, normalized=False):
@@ -153,6 +155,7 @@ class IoU:
     matrix is normalized or not. Default: False.
     - ignore_index (int or iterable, optional): Index of the classes to ignore
     when computing the IoU. Can be an int, or any iterable of ints.
+    Taken from: https://github.com/davidtvs/PyTorch-ENet/blob/master/metric/iou.py
     """
 
     def __init__(self, num_classes, normalized=False, ignore_index=None):
